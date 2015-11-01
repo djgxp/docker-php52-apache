@@ -1,0 +1,7 @@
+projectname:
+  build: .
+  ports:
+    - "8001:80"
+    - "2221:22"
+  volumes:
+    - ~/www/projectname:/var/www/projectname
