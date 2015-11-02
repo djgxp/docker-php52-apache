@@ -1,7 +1,9 @@
-projectname:
+project:
   build: .
   ports:
     - "8001:80"
     - "2221:22"
   volumes:
-    - ~/www/projectname:/var/www/projectname
+    - ~/www/docker-php52-apache/www:/var/www
+  environment:
+    SSH_KEY: "Put text of ~/.ssh/id_rsa.pub content here !"

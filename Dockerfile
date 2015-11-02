@@ -6,10 +6,18 @@ ENV DEBIAN_FRONTEND noninteractive
 ENV HOME /root
 
 RUN apt-get update
-RUN apt-get install -y -q acl vim wget curl git subversion acl htop zip cron openssh-server
+RUN apt-get install -y -q --force-yes apt-utils
+RUN apt-get install -y -q --force-yes acl vim wget curl git subversion acl htop zip cron openssh-server memcached
 
 # config ssh for easy access
-RUN sed -i 's/^PermitRootLogin/# PermitRootlogin/' /etc/ssh/sshd_config
+RUN sed -i 's/PermitRootLogin without-password/PermitRootLogin yes/' /etc/ssh/sshd_config
+RUN sed -i 's/\#PermitRootLogin yes/PermitRootlogin yes/' /etc/ssh/sshd_config
+RUN sed -i 's/UsePrivilegeSeparation.*/UsePrivilegeSeparation no/g' /etc/ssh/sshd_config
+RUN sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd
+RUN mkdir -p /var/run/sshd
+RUN echo 'SSHD: ALL' >> /etc/hosts.allow
+ENV NOTVISIBLE "in users profile"
+RUN echo "export VISIBLE=now" >> /etc/profile
 RUN echo 'root:password' | chpasswd
 RUN mkdir -p /root/.ssh
 
@@ -27,6 +35,7 @@ ENV LC_ALL fr_FR.UTF-8
 
 # Add devel user for deployment
 RUN useradd --system --uid=1000 -s /bin/bash -m -d /home/devel devel
+RUN addgroup devel sudo
 RUN echo 'devel:password' | chpasswd
 RUN mkdir -p /home/devel/.ssh
 RUN chown -R devel:devel /home/devel
@@ -72,6 +81,9 @@ ENV APACHE_LOG_DIR /var/log/apache2
 # install apache
 RUN apt-get install -y apache2
 RUN a2enmod rewrite
+RUN a2enmod proxy
+RUN a2enmod proxy_http
+RUN a2enmod proxy_connect
 RUN echo "umask 002" >> /etc/apache2/envvars
 
 # PHP5.2 for apache
@@ -84,3 +96,7 @@ RUN apt-get install -y libapache2-mod-php5
 RUN usermod -a -G www-data devel
 
 EXPOSE 80 22
+
+ADD run.sh /run.sh
+RUN chmod +x /run.sh
+CMD ["/run.sh"]
